@@ -1,4 +1,7 @@
 import os
+import urllib.request
+import urllib.error
+
 import psutil
 import subprocess
 import tkinter as tk
@@ -7,7 +10,7 @@ import threading
 import locale
 import json
 
-# === ЯЗЫК ===
+# === LANGUAGE ===
 
 def detect_lang():
     try:
@@ -31,40 +34,82 @@ def load_translations(lang_code):
 
 TRANSLATIONS = load_translations(LANG)
 
+REMOTE_DB_URL = "https://raw.githubusercontent.com/Ender-Vanilla-Studios/NoCheatMC/refs/heads/main/NoCheatMC-BD.json"
+
+def load_json_from_file(path):
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"❌ Error reading local file {path}: {e}")
+        return None
+
+def load_json_from_url(url):
+    try:
+        with urllib.request.urlopen(url, timeout=10) as response:
+            if response.status == 200:
+                data = response.read().decode('utf-8')
+                return json.loads(data)
+            else:
+                print(f"❌ Error loading from URL {url}: HTTP {response.status}")
+    except urllib.error.URLError as e:
+        print(f"❌ Error loading from URL {url}: {e}")
+    except Exception as e:
+        print(f"❌ General error loading from URL {url}: {e}")
+    return None
+
+def load_cheat_database_smart(local_path="NoCheatMC-BD.json", remote_url=REMOTE_DB_URL):
+    remote_data = load_json_from_url(remote_url)
+    local_data = load_json_from_file(local_path)
+
+    # If neither remote nor local database exists — return empty lists
+    if remote_data is None and local_data is None:
+        print("❌ No remote or local cheat database found.")
+        return [], []
+
+    # If only remote exists
+    if remote_data is not None and local_data is None:
+        print("ℹ️ Using remote cheat database.")
+        cheat_mods = [x.lower() for x in remote_data.get("cheat_mods", [])]
+        cheat_resourcepacks = [x.lower() for x in remote_data.get("cheat_resourcepacks", [])]
+        return cheat_mods, cheat_resourcepacks
+
+    # If only local exists
+    if local_data is not None and remote_data is None:
+        print("ℹ️ Using local cheat database.")
+        cheat_mods = [x.lower() for x in local_data.get("cheat_mods", [])]
+        cheat_resourcepacks = [x.lower() for x in local_data.get("cheat_resourcepacks", [])]
+        return cheat_mods, cheat_resourcepacks
+
+    # If both exist — choose the more complete (by total number of cheats)
+    local_count = len(local_data.get("cheat_mods", [])) + len(local_data.get("cheat_resourcepacks", []))
+    remote_count = len(remote_data.get("cheat_mods", [])) + len(remote_data.get("cheat_resourcepacks", []))
+
+    if remote_count >= local_count:
+        print(f"ℹ️ Using remote cheat database (size: {remote_count} vs local: {local_count}).")
+        cheat_mods = [x.lower() for x in remote_data.get("cheat_mods", [])]
+        cheat_resourcepacks = [x.lower() for x in remote_data.get("cheat_resourcepacks", [])]
+    else:
+        print(f"ℹ️ Using local cheat database (size: {local_count} vs remote: {remote_count}).")
+        cheat_mods = [x.lower() for x in local_data.get("cheat_mods", [])]
+        cheat_resourcepacks = [x.lower() for x in local_data.get("cheat_resourcepacks", [])]
+
+    return cheat_mods, cheat_resourcepacks
+
 def t(key, *args):
     text = TRANSLATIONS.get(key, key)
     return text.format(*args) if args else text
 
-# === ДАННЫЕ ===
+CHEAT_MODS, CHEAT_RESOURCEPACKS = load_cheat_database_smart()
 
-def load_cheat_database(file_path="NoCheatMC-BD.json"):
-    cheat_mods = []
-    cheat_resourcepacks = []
-
-    if not os.path.isfile(file_path):
-        print(f"❌ Файл базы читов не найден: {file_path}")
-        return cheat_mods, cheat_resourcepacks
-
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            cheat_mods = [mod.lower() for mod in data.get("cheat_mods", [])]
-            cheat_resourcepacks = [rp.lower() for rp in data.get("cheat_resourcepacks", [])]
-    except json.JSONDecodeError as e:
-        print(f"❌ Ошибка парсинга JSON: {e}")
-    except Exception as e:
-        print(f"❌ Ошибка при загрузке базы читов: {e}")
-
-    return cheat_mods, cheat_resourcepacks
-
-CHEAT_MODS, CHEAT_RESOURCEPACKS = load_cheat_database()
-
-# Добавляем функцию, которую вызывали, но не определили
+# Add the function which was called but not defined
 def load_cheat_resourcepacks():
-    # просто возвращаем уже загруженный список
+    # simply return already loaded list
     return CHEAT_RESOURCEPACKS
 
-# === ПРОВЕРКИ ===
+# === CHECKS ===
 
 def find_game_directory():
     for proc in psutil.process_iter(['name', 'cmdline']):
@@ -114,7 +159,7 @@ def check_java_version():
     except FileNotFoundError:
         return t("java_not_found")
 
-# === ГЛАВНАЯ ПРОВЕРКА ===
+# === MAIN CHECK ===
 
 def perform_check(output_widget, button):
     button.config(state=tk.DISABLED)
@@ -135,7 +180,7 @@ def perform_check(output_widget, button):
     output_widget.insert(tk.END, t("game_dir", game_dir) + "\n")
     lines.append(f"Game directory: {game_dir}")
 
-    # МОДЫ
+    # MODS
     output_widget.insert(tk.END, t("checking_mods"))
     mods = get_mods_list(mods_path)
     suspicious_mods = check_mods(mods)
@@ -148,7 +193,7 @@ def perform_check(output_widget, button):
         output_widget.insert(tk.END, t("no_suspicious"))
         lines.append("No suspicious mods")
 
-    # РЕСУРС-ПАКИ
+    # RESOURCE PACKS
     output_widget.insert(tk.END, t("checking_resourcepacks"))
     cheat_rp = load_cheat_resourcepacks()
     resourcepacks = os.listdir(res_path) if os.path.isdir(res_path) else []
@@ -161,7 +206,7 @@ def perform_check(output_widget, button):
         output_widget.insert(tk.END, t("no_suspicious_resourcepacks"))
         lines.append("No suspicious resourcepacks")
 
-    # ПРОЦЕССЫ
+    # PROCESSES
     cheat_processes = check_cheat_processes()
     if cheat_processes:
         output_widget.insert(tk.END, t("cheat_processes", ', '.join(cheat_processes)))
@@ -175,7 +220,7 @@ def perform_check(output_widget, button):
     output_widget.insert(tk.END, t("java_version", java_info) + "\n")
     lines.append("Java version:\n" + java_info)
 
-    # ОТЧЁТ
+    # REPORT
     try:
         report_path = os.path.join(os.getcwd(), "nocheat_report.txt")
         with open(report_path, "w", encoding="utf-8") as f:
