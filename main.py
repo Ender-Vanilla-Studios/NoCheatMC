@@ -15,8 +15,12 @@ import json
 def detect_lang():
     try:
         lang = locale.getlocale()[0]
-        if lang and lang.lower().startswith("ru"):
-            return "ru"
+        if lang:
+            lang_lower = lang.lower()
+            if lang_lower.startswith("ru"):
+                return "ru"
+            elif lang_lower.startswith("uk") or lang_lower.startswith("ua"):
+                return "ua"
     except:
         pass
     return "en"
