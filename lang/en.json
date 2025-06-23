@@ -1,0 +1,20 @@
+{
+  "btn_check": "Check Minecraft",
+  "searching_game": "🔍 Searching for game directory...\n",
+  "not_found": "❌ Could not find a running Minecraft with --gameDir.\n",
+  "game_dir": "📁 Game directory: {}",
+  "checking_mods": "📦 Checking mods...\n",
+  "mod_count": "✅ Mods found: {}\n",
+  "suspicious_mods": "⚠️ Suspicious mods: {}\n",
+  "no_suspicious": "✅ No suspicious mods.\n",
+  "cheat_processes": "🚨 Cheat processes found: {}\n",
+  "no_cheat_processes": "✅ No cheat processes found.\n",
+  "java_version": "🔧 Java version:\n{}",
+  "java_not_found": "Java not found (not installed or not in PATH)",
+  "description": "This tool checks your currently running Minecraft instance for known cheats and suspicious mods by analyzing running Java processes, installed mod files, and Java version.",
+  "report_saved": "📄 Report saved to '{}'\n",
+  "checking_resourcepacks": "🖼 Checking resource packs...\n",
+  "suspicious_resourcepacks": "⚠️ Suspicious resource packs: {}\n",
+  "no_suspicious_resourcepacks": "✅ No suspicious resource packs.\n"
+
+}
