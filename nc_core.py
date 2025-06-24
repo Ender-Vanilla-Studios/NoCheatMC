@@ -138,14 +138,30 @@ class NoCheatChecker:
 
     def find_non_mod_jars(self, game_dir, log_func=print):
         jar_files = []
+        system_dirs_to_skip = {'.fabric', '.gradle', '.minecraft', '.git', '.idea'}  # можно добавить другие
+
         for root, dirs, files in os.walk(game_dir):
-            if "mods" in root.replace("\\", "/").split("/"):
+            # Преобразуем путь в части по /
+            parts = root.replace("\\", "/").split("/")
+
+            # Пропускаем если в пути есть папка mods или системная папка
+            if "mods" in parts or any(d in system_dirs_to_skip for d in parts):
                 continue
+
             for file in files:
                 if file.endswith(".jar"):
                     full_path = os.path.join(root, file)
                     rel_path = os.path.relpath(full_path, game_dir)
                     jar_files.append(rel_path)
+
+        if jar_files:
+            log_func(self.t("nonmod_jars_found", len(jar_files)) + "\n")
+            for path in jar_files:
+                log_func("  • " + path + "\n")
+        else:
+            log_func(self.t("no_nonmod_jars") + "\n")
+
+        return jar_files
 
         if jar_files:
             log_func(self.t("nonmod_jars_found", len(jar_files)) + "\n")
