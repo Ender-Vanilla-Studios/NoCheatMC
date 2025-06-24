@@ -15,6 +15,10 @@
   "report_saved": "📄 Report saved to '{}'\n",
   "checking_resourcepacks": "🖼 Checking resource packs...\n",
   "suspicious_resourcepacks": "⚠️ Suspicious resource packs: {}\n",
-  "no_suspicious_resourcepacks": "✅ No suspicious resource packs.\n"
-
+  "no_suspicious_resourcepacks": "✅ No suspicious resource packs.\n",
+  "report-opn": "Open report",
+  "noreport": "❌ Report not created yet.\n",
+  "nonmod_jars_found": "🧩 Found .jar files outside mods folder: {}",
+  "no_nonmod_jars": "✅ No foreign .jar files outside mods folder found.",
+  "suspicious_behavior": "Mod {0} exhibits suspicious behavior by content."
 }
